@@ -141,7 +141,6 @@ spork ~ ctl1();
 spork ~ ctl2();
 spork ~ play();
 
-            .8 => bar.noteOn;
-
+.8 => bar.noteOn;
 
 while(true) 1::second=> now;
