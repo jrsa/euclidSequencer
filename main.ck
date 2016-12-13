@@ -45,21 +45,25 @@ fun void build(int lvl, int ptrn[], int cts[], int rmndrs[]) {
 
 MAUI_View view;
 int h, w;
-MAUI_Slider s_total, s_pulses;
+MAUI_Slider s_total, s_pulses, s_bpm;
 
 32 => int MAX;
 
 s_total.range( 1, MAX );
 s_pulses.range( 1, MAX );
+s_bpm.range( 1, 999 );
 s_total.size( 300, s_total.height() );
 s_pulses.size( 300, s_total.height() + s_pulses.height() );
+s_bpm.size( 300, s_total.height() + s_pulses.height() + s_bpm.height() );
 
-200 +=> h;
+300 +=> h;
 
 "accent beats" => s_total.name;
 "total beats" => s_pulses.name;
+"tempo" => s_bpm.name;
 MAUI_Slider.integerFormat => s_total.displayFormat;
 MAUI_Slider.integerFormat => s_pulses.displayFormat;
+MAUI_Slider.integerFormat => s_bpm.displayFormat;
 
 new MAUI_LED[MAX] @=> MAUI_LED @ lamps[];
 
@@ -74,6 +78,7 @@ MAX * 32 => w;
 
 s_total => view.addElement;
 s_pulses => view.addElement;
+s_bpm => view.addElement;
 view.display();
 
 (w, h) => view.size;
@@ -121,24 +126,40 @@ fun void ctl2() {
     }
 }
 
+
 ModalBar bar => dac;
-95 => int bpm;
+180 => int bpm => s_bpm.value;
 1 => int seq_counter;
+
+fun void ctl3() {
+    while(true) {
+        s_bpm => now;
+        s_bpm.value() $ int => bpm;
+    }
+}
 
 fun void play() {
     regenerate();
     while(seq_counter++) {
-        s_total.value() $ int => int total;
-        seq_counter%total => int seqElement;
+
+        s_pulses.value() $ int => int total;
+        seq_counter % (total) => int seqElement;
+        chout <= seqElement <= IO.newline();
+        update_lights();
+        MAUI_LED.green => lamps[seqElement].color;
         if(sequence[seqElement] == 1) {
             .8 => bar.noteOn;
         }
-        (60$float/bpm$float)::second => now;
+        else {
+            .2 => bar.noteOn;            
+        }
+        (60.0/bpm)::second => now;
     }
 }
 
 spork ~ ctl1();
 spork ~ ctl2();
+spork ~ ctl3();
 spork ~ play();
 
 .8 => bar.noteOn;
